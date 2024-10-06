@@ -38,6 +38,7 @@ class Pallete {
   static const Color lightEverliOnError = Color(0xFFFFFFFF);
   static const Color lightEverliSuccess = Color(0xFF16A34A);
   static const Color lightEverliOnSuccess = Color(0xFFFFFFFF);
+  static const Color appbar = Color(0xFF2B3A67);
 
   static const Color inactiveSeekColor = Colors.white38;
   static const Color subtitleText = Color(0xffa7a7a7);

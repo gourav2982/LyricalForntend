@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:lyrical/Core/Theme/app_theme.dart';
+import 'package:lyrical/Core/Theme/pallete.dart';
 
 void main() {
   runApp(const MyApp());
@@ -78,7 +79,10 @@ class _LyricsPageState extends State<LyricsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your Personal AI Lyricist'),
+        title:  Text('Your Personal AI Lyricist',style: Theme.of(context).textTheme.titleLarge!.copyWith(
+          color: Pallete.darkEverliOnBackground
+        ),),
+        backgroundColor: Pallete.appbar,
       ),
       body: SingleChildScrollView(
         child: Padding(
