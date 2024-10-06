@@ -10,19 +10,20 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Lyrical',
       theme: lightMode,
       debugShowCheckedModeBanner: false,
-      home: LyricsPage(),
+      home: const LyricsPage(),
     );
   }
 }
 
 class LyricsPage extends StatefulWidget {
+  const LyricsPage({super.key});
+
   @override
   _LyricsPageState createState() => _LyricsPageState();
 }
@@ -33,37 +34,43 @@ class _LyricsPageState extends State<LyricsPage> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _lyricsController = TextEditingController();
 
-  // Function to send request to backend and fetch generated lyrics
+  // Boolean to track loading state
+  bool _isLoading = false;
+
+
   Future<void> generateLyrics() async {
-    debugPrint("description: ${jsonEncode(<String, String>{
+    setState(() {
+      _isLoading = true; // Start loading
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://lyrical-backend-git-main-gourav2982s-projects.vercel.app/generate_lyrics'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
           'description': buildPrompt(
             _languageController.text.trim(),
             _genreController.text.trim(),
             _descriptionController.text.trim(),
           ),
-        })}");
-    // Replace with your backend URL
-    final response = await http.post(
-      Uri.parse('https://lyrical-backend-git-main-gourav2982s-projects.vercel.app/generate_lyrics'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'description': buildPrompt(
-          _languageController.text.trim(),
-          _genreController.text.trim(),
-          _descriptionController.text.trim(),
-        ),
-      }),
-    );
+        }),
+      );
 
-    if (response.statusCode == 200) {
+      if (response.statusCode == 200) {
+        setState(() {
+          final responseBody = utf8.decode(response.bodyBytes);
+          _lyricsController.text = jsonDecode(responseBody)['lyrics'];
+        });
+      } else {
+        throw Exception('Failed to generate lyrics');
+      }
+    } finally {
       setState(() {
-        final responseBody = utf8.decode(response.bodyBytes);
-        _lyricsController.text = jsonDecode(responseBody)['lyrics'];
+        _isLoading = false; // Stop loading
       });
-    } else {
-      throw Exception('Failed to generate lyrics');
     }
   }
 
@@ -78,7 +85,6 @@ class _LyricsPageState extends State<LyricsPage> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // Language input
               TextField(
                 controller: _languageController,
                 decoration: const InputDecoration(
@@ -87,8 +93,6 @@ class _LyricsPageState extends State<LyricsPage> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Genre input
               TextField(
                 controller: _genreController,
                 decoration: const InputDecoration(
@@ -97,8 +101,6 @@ class _LyricsPageState extends State<LyricsPage> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Song description input
               TextField(
                 controller: _descriptionController,
                 maxLines: 4,
@@ -109,22 +111,25 @@ class _LyricsPageState extends State<LyricsPage> {
               ),
               const SizedBox(height: 16),
 
-              // Button to generate/update lyrics
+           
               ElevatedButton(
                 onPressed: generateLyrics,
                 child: const Text('Create/Update Lyrics'),
               ),
               const SizedBox(height: 16),
 
-              TextField(
-                controller: _lyricsController,
-                maxLines: 8,
-                decoration: const InputDecoration(
-                  labelText: 'Generated Lyrics',
-                  border: OutlineInputBorder(),
-                ),
-                readOnly: true,
-              ),
+             
+              _isLoading
+                  ? const CircularProgressIndicator() // Show loading indicator
+                  : TextField(
+                      controller: _lyricsController,
+                      maxLines: 8,
+                      decoration: const InputDecoration(
+                        labelText: 'Generated Lyrics',
+                        border: OutlineInputBorder(),
+                      ),
+                      readOnly: true,
+                    ),
             ],
           ),
         ),
@@ -134,15 +139,15 @@ class _LyricsPageState extends State<LyricsPage> {
 
   String buildPrompt(String lang, String genere, String desc) {
     return '''
-      Generate Song Lyrics with these feature:
-      Language:$lang
-      Genere:$genere
-      Description:$desc
+      Generate Song Lyrics with these features:
+      Language: $lang
+      Genre: $genere
+      Description: $desc
 
-      Give the respone in plain text without any illegal character write it in original language charcters and  in english interpertation in same line
-      Respond in this format (format only)
-      ज़िन्दगी एक सफ़र है,        (Life is a journey).
-      At least 10 lines, but make it long to make it better
+      Give the response in plain text without any illegal character, write it in the original language characters and in English interpretation in the same line.
+      Respond in this format:
+      ज़िन्दगी एक सफ़र है, (Life is a journey).
+      At least 10 lines, but make it long to make it better.
 ''';
   }
 }
